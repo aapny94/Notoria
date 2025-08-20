@@ -3,11 +3,10 @@ import Login from "./pages/login.jsx"; // Import your Login component
 function App() {
   return (
     <>
-      <div class="blob blob1"></div>
-      <div class="blob blob4"></div>
+      <div className="blobContainer">
 
-      <div class="blob blob2"></div>
-      <div class="blob blob3"></div>
+      </div>
+
       <div className="content">
         <BrowserRouter>
           <Routes>
