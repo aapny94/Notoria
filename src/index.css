@@ -28,7 +28,7 @@ body {
 .blobContainer {
   display: flex;
   position: fixed;
-  background-image: url(../src/assets/bg2.webp);
+  background-image: url(../src/assets/bg2.png);
   background-size: cover;
   filter: blur(200px);
   background-blend-mode: screen;
@@ -50,4 +50,18 @@ body {
   display: flex;
   flex-direction: column;
   flex: 1;
+}
+
+
+.glass-card {
+/* From https://css.glass */
+background: rgba(255, 255, 255, 0.09);
+border-radius: 1.5rem;
+box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+backdrop-filter: blur(12.2px);
+-webkit-backdrop-filter: blur(5.2px);
+border: 1px solid rgba(255, 255, 255, 0.3);
+padding: 5rem;
+width: 30rem;
+margin: auto;
 }
