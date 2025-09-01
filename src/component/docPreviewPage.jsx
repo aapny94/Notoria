@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import { getDocumentByIdOrSlug } from "../api/apiDocumentContent";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeHighlight from "rehype-highlight";
+import "highlight.js/styles/github-dark.css"; // code block theme
 
 function DocPreviewPage({ idOrSlug: propId }) {
   const params = useParams();
@@ -48,9 +50,14 @@ function DocPreviewPage({ idOrSlug: propId }) {
       </div>
       {doc.summary && <p style={{ marginTop: 0 }}>{doc.summary}</p>}
 
-      {/* Markdown renderer */}
+      {/* Markdown renderer with code highlighting */}
       <div style={{ lineHeight: 1.6 }}>
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          rehypePlugins={[rehypeHighlight]}
+        >
+          {markdown}
+        </ReactMarkdown>
       </div>
     </div>
   );
