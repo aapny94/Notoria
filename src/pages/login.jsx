@@ -14,6 +14,8 @@ function Login() {
 
   const envVersion = import.meta.env.VITE_VERSION;
 
+  const TOKEN_EXPIRY_HOURS = 2; // Token valid for 2 hours
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const envUsername = import.meta.env.VITE_USERNAME;
@@ -26,7 +28,7 @@ function Login() {
     if (username === envUsername && password === envPassword) {
       // Generate token and expiry
       const token = Math.random().toString(36).substr(2);
-      const expiry = Date.now() + TOKEN_EXPIRY_MINUTES * 60 * 1000;
+      const expiry = Date.now() + TOKEN_EXPIRY_HOURS * 60 * 60 * 1000;
       localStorage.setItem(TOKEN_KEY, token);
       localStorage.setItem(TOKEN_KEY + "_expiry", expiry);
       navigate("/");

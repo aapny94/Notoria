@@ -5,7 +5,7 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-
+  --width-fixed: 1480px;
 }
 
 div {
@@ -52,16 +52,96 @@ body {
   flex: 1;
 }
 
-
 .glass-card {
-/* From https://css.glass */
-background: rgba(255, 255, 255, 0.09);
-border-radius: 1.5rem;
-box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-backdrop-filter: blur(12.2px);
--webkit-backdrop-filter: blur(5.2px);
-border: 1px solid rgba(255, 255, 255, 0.3);
-padding: 5rem;
-width: 30rem;
-margin: auto;
+  /* From https://css.glass */
+  background: rgba(255, 255, 255, 0.09);
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(12.2px);
+  -webkit-backdrop-filter: blur(5.2px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 5rem;
+  width: 30rem;
+  margin: auto;
+}
+
+.mainContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.678),
+    rgba(8, 8, 8, 0.393)
+  );
+  opacity: 0;
+  animation: fadeIn 0.45s ease-in forwards;
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+.header {
+  border-bottom: solid 1px rgba(255, 255, 255, 0.1);
+  width: 100%;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.6rem 2rem;
+  max-width: var(--width-fixed);
+  width: 100%;
+  flex-direction: row;
+  margin: auto;
+  align-items: center;
+}
+
+.header-content img {
+  width: 8rem;
+}
+
+.header-content button {
+  padding: 0px !important;
+  padding-block: 0px !important;
+  padding-inline: 0px !important;
+  height: 2.3rem;
+}
+
+.contentContainer {
+  flex: 1;
+  display: flex;
+  width: 100%;
+  max-width: var(--width-fixed);
+  margin: auto;
+  padding: 1rem 2rem;
+  gap: 1rem;
+  box-sizing: border-box;
+  max-width: var(--width-fixed);
+  padding: 0px;
+  flex-direction: row;
+}
+
+.menuContainer {
+  padding-left: 2rem;
+  width: 20%;
+  min-width: 250px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-right: solid 1px rgba(255, 255, 255, 0.1);
+}
+
+
+
+.docContainer {
+  padding: 1rem;
+  width: 80%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }

@@ -9,6 +9,32 @@ const theme = createTheme({
     },
   },
   components: {
+    MuiListItem: {
+      styleOverrides: {
+        root: {
+          width: "100%",
+          padding: 0,
+
+        },
+      },
+    },
+
+    MuiListItemButton: {
+      styleOverrides: {
+        root: {
+          width: "200px",
+          alignItems: "flex-start",
+          padding: 0,
+          flexDirection: "row",
+          alignItems: "center",
+          "&:hover": {
+            backgroundColor: "rgba(255, 255, 255, 0)",
+            opacity: 0.4,
+            transition: "all 0.4s ease",
+          },
+        },
+      },
+    },
 
     // input customizations design //
 
@@ -28,12 +54,11 @@ const theme = createTheme({
       },
     },
     MuiFormLabel: {
-        styleOverrides: {
-            root: {
-                lineHeight: '.9em',
-
-            },
+      styleOverrides: {
+        root: {
+          lineHeight: ".9em",
         },
+      },
     },
     MuiOutlinedInput: {
       styleOverrides: {
@@ -55,7 +80,6 @@ const theme = createTheme({
           color: "#fff", // input text color
           padding: "12px",
         },
-    
       },
     },
     MuiInputLabel: {
@@ -69,10 +93,7 @@ const theme = createTheme({
       },
     },
 
-
     // input customizations design //
-
-
   },
 });
 
