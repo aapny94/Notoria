@@ -1,10 +1,15 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { getDocumentByIdOrSlug } from "../api/apiDocumentContent";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import "highlight.js/styles/github-dark.css"; // code block theme
+import { Box, IconButton } from "@mui/material";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import remarkMark from "remark-mark";
+import rehypeRaw from "rehype-raw";
 
 function slugify(text) {
   return (
@@ -19,6 +24,8 @@ function slugify(text) {
 }
 
 function DocPreviewPage({ idOrSlug: propId }) {
+  const navigate = useNavigate(); // ✅ get navigate hook
+
   const params = useParams();
   const idOrSlug = propId ?? params.idOrSlug ?? null;
 
@@ -48,7 +55,10 @@ function DocPreviewPage({ idOrSlug: propId }) {
   }, [idOrSlug]);
 
   const markdown = (doc?.content?.markdown || "").replace(/\r\n/g, "\n");
-
+  const highlightedMarkdown = markdown.replace(
+    /==([^=]+)==/g,
+    "<mark>$1</mark>"
+  );
   // Extract headings for TOC (H1–H4; extend if you like)
   const toc = useMemo(() => {
     const lines = markdown.split("\n");
@@ -131,6 +141,27 @@ function DocPreviewPage({ idOrSlug: propId }) {
       }}
     >
       <div style={{ flex: 1, maxWidth: "80%", paddingRight: "1.5rem" }}>
+        <Box
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            justifyContent: "flex-end",
+          }}
+        >
+          <IconButton
+            variant="outlined"
+            style={{ width: "fit-content", padding: 10, marginBottom: -6 }}
+            onClick={() => navigate(`/edit/${doc.slug || doc.id}`)} // ✅ navigate on click
+          >
+            <EditIcon style={{ fontSize: "1.5rem" }} />
+          </IconButton>
+          <IconButton
+            variant="outlined"
+            style={{ width: "fit-content", padding: 10, marginBottom: -6 }}
+          >
+            <DeleteIcon style={{ fontSize: "1.5rem" }} />
+          </IconButton>
+        </Box>
         {Array.isArray(doc.tags) && doc.tags.length > 0 && (
           <div
             style={{
@@ -168,13 +199,13 @@ function DocPreviewPage({ idOrSlug: propId }) {
 
         <div
           style={{
-            opacity: 0.7,
             marginBottom: 12,
             background: "rgba(113, 113, 113, 1)",
             width: "fit-content",
             padding: "2px 16px",
             borderRadius: 50,
             fontSize: 14,
+            background: "#ef4132",
             color: "rgba(255, 255, 255, 1)",
           }}
         >
@@ -192,9 +223,24 @@ function DocPreviewPage({ idOrSlug: propId }) {
         >
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeHighlight]}
+            rehypePlugins={[rehypeRaw, rehypeHighlight]}
+            components={{
+              mark: ({ children }) => (
+                <mark
+                  style={{
+                    background: "#ffe066",
+                    color: "#222",
+                    borderRadius: "4px",
+                    padding: "0 4px",
+                  }}
+                >
+                  {children}
+                </mark>
+              ),
+              // ...other custom components...
+            }}
           >
-            {markdown}
+            {highlightedMarkdown}
           </ReactMarkdown>
         </div>
       </div>

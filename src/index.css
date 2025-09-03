@@ -8,6 +8,22 @@
   --width-fixed: 1480px;
 }
 
+/* Thin scrollbar styling for Webkit browsers (Chrome, Edge, Safari) */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 1px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #52525265;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+
 div {
   display: flex;
   flex-direction: column;
@@ -141,7 +157,7 @@ body {
 .docContainer {
   padding: 1rem;
   width: 80%;
-  height: 100%;
+  height: 100vh;
   display: flex;
   flex-direction: column;
 }

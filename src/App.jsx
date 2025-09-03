@@ -7,6 +7,8 @@ import {
 } from "react-router-dom";
 import Login from "./pages/login.jsx";
 import Home from "./pages/home.jsx";
+import DocEditPage from "./pages/docEditPage.jsx";
+import Edit from "./pages/edit.jsx";
 
 const TOKEN_KEY = import.meta.env.VITE_TOKEN_KEY || "app_token";
 const TOKEN_EXPIRY_HOURS = 2; // 2 hours
@@ -34,14 +36,37 @@ function App() {
       <div className="content">
         <BrowserRouter>
           <Routes>
+            {/* Edit page must come first to avoid any ambiguity */}
             <Route
-              path="/:idOrSlug?"
+              path="/edit/:idOrSlug/*"
+              element={
+                <ProtectedRoute>
+                  <Edit />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Home without param */}
+            <Route
+              path="/"
               element={
                 <ProtectedRoute>
                   <Home />
                 </ProtectedRoute>
               }
             />
+
+            {/* Home with a single param for preview */}
+            <Route
+              path="/:idOrSlug"
+              element={
+                <ProtectedRoute>
+                  <Home />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Login last */}
             <Route
               path="/login"
               element={useAuth() ? <Navigate to="/" replace /> : <Login />}
