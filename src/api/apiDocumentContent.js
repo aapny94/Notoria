@@ -89,3 +89,62 @@ export async function updateDoc(key, payload) {
 export async function getDocById(id) {
   return getDocByKey(id);
 }
+
+
+export async function createDoc(payload) {
+  const token = localStorage.getItem(TOKEN_KEY); // Or your token key
+  const res = await fetch(`${STRAPI_URL}/api/docs`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ data: payload }), // <-- NEST UNDER "data"
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to create document");
+  }
+
+  return await res.json();
+}
+
+export async function deleteDoc(key) {
+  const token = localStorage.getItem(TOKEN_KEY);
+  const headers = {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+  let documentId = key;
+
+  // If key is numeric, resolve to documentId first
+  if (isNumericId(key)) {
+    const found = await fetchJson(
+      `${STRAPI_URL}/api/docs?filters[id][$eq]=${key}&publicationState=preview&fields[0]=documentId`,
+      { headers }
+    );
+    if (!found?.data?.length)
+      throw new Error(`Cannot resolve numeric id ${key} to documentId`);
+    documentId =
+      found.data[0].documentId || found.data[0].attributes?.documentId;
+  }
+
+  // Delete using documentId
+  const res = await fetch(`${STRAPI_URL}/api/docs/${documentId}`, {
+    method: "DELETE",
+    headers,
+  });
+
+  if (!res.ok) {
+    let error;
+    try {
+      error = await res.json();
+    } catch {
+      error = { message: "Failed to delete document" };
+    }
+    throw new Error(error.message || "Failed to delete document");
+  }
+
+  return true;
+}

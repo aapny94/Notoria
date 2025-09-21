@@ -1,7 +1,7 @@
 // src/pages/docEditPage.jsx
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
-import DocEditor from "../component/docEditor.jsx";
+import { deleteDoc } from "../api/apiDocumentContent"; // Add this import
 
 import { getDocById, updateDoc } from "../api/apiDocumentContent";
 import { EditorContent, useEditor } from "@tiptap/react";
@@ -20,6 +20,7 @@ import bash from "highlight.js/lib/languages/bash";
 import { getCategories } from "../api/apiCategory"; // You need to implement this API call
 import { defaultMarkdownSerializer } from "prosemirror-markdown";
 import { MarkdownSerializer } from "prosemirror-markdown";
+import { useNavigate } from "react-router-dom";
 
 import { Editor } from "@toast-ui/react-editor";
 import "@toast-ui/editor/dist/toastui-editor.css";
@@ -84,6 +85,8 @@ export default function DocEditPage() {
   const [editorInstance, setEditorInstance] = useState(null);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const navigate = useNavigate();
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -234,6 +237,20 @@ export default function DocEditPage() {
     ["ul", "ol", "table"],
     // Remove any group or button you don't want
   ];
+
+  const handleDelete = async () => {
+    if (!id) return;
+    if (!window.confirm("Are you sure you want to delete this document?"))
+      return;
+    try {
+      await deleteDoc(id);
+      alert("Document deleted!");
+      // Optionally, redirect or update UI here
+      navigate("/"); // Redirect to home
+    } catch (e) {
+      alert("Delete failed: " + (e?.message || e));
+    }
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "row", flex: 1 }}>
@@ -447,6 +464,23 @@ export default function DocEditPage() {
             }}
           >
             Update
+          </button>
+        </div>
+        <div style={{ marginTop: 8 }}>
+          <button
+            onClick={handleDelete}
+            style={{
+              padding: "9px 12px",
+              background: "#ef4132",
+              color: "#fff",
+              border: "none",
+              cursor: "pointer",
+              opacity: 1,
+              borderRadius: 3,
+              transition: "all 0.2s",
+            }}
+          >
+            Delete
           </button>
         </div>
       </div>

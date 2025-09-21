@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2025-09-18T16:07:10.919Z"
+    "x-generation-date": "2025-09-21T06:40:04.985Z"
   },
   "x-strapi-config": {
     "plugins": [
@@ -3684,6 +3684,17 @@
                             }
                           }
                         },
+                        "author": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "number"
+                            },
+                            "documentId": {
+                              "type": "string"
+                            }
+                          }
+                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
@@ -4007,6 +4018,17 @@
               },
               "blocks": {},
               "users_permissions_user": {
+                "oneOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "example": "string or id"
+              },
+              "author": {
                 "oneOf": [
                   {
                     "type": "integer"
@@ -4622,6 +4644,17 @@
                             }
                           }
                         },
+                        "author": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "number"
+                            },
+                            "documentId": {
+                              "type": "string"
+                            }
+                          }
+                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
@@ -4816,6 +4849,17 @@
           },
           "blocks": {},
           "users_permissions_user": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "number"
+              },
+              "documentId": {
+                "type": "string"
+              }
+            }
+          },
+          "author": {
             "type": "object",
             "properties": {
               "id": {
