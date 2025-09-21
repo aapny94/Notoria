@@ -17,3 +17,20 @@ export async function fetchCategoriesAndDocs() {
   const { rows } = await pool.query(sql);
   return rows;
 }
+export async function fetchAllCategories() {
+  const sql = `SELECT id, name, parent_id FROM categories ORDER BY name;`;
+  const { rows } = await pool.query(sql);
+  return rows;
+}
+
+
+export async function createCategory({ name, parent_id }) {
+  const sql = `
+    INSERT INTO categories (name, parent_id)
+    VALUES ($1, $2)
+    RETURNING id, name, parent_id;
+  `;
+  const values = [name, parent_id || null];
+  const { rows } = await pool.query(sql, values);
+  return rows[0];
+}

@@ -13,20 +13,21 @@ export async function getDocumentPreviewById(idOrSlug) {
     );
 
   const sql = `
-    SELECT
-      d.id,
-      d.title,
-      d.summary,
-      d.slug,
-      d.tags,
-      d.status,
-      d.created_at AS created,
-      d.updated_at AS updated,
-      d.content       AS content_json,     -- json/jsonb column (NOT NULL in your schema)
-      d.content_md    AS content_md        -- text column (markdown, nullable)
-    FROM documents d
-    WHERE ${isUuid ? "d.id = $1::uuid" : "d.slug = $1"}
-    LIMIT 1;
+SELECT
+  d.id,
+  d.title,
+  d.summary,
+  d.slug,
+  d.tags,
+  d.status,
+  d.category_id,           -- add this line
+  d.created_at AS created,
+  d.updated_at AS updated,
+  d.content       AS content_json,
+  d.content_md    AS content_md
+FROM documents d
+WHERE ${isUuid ? "d.id = $1::uuid" : "d.slug = $1"}
+LIMIT 1;
   `;
 
   const { rows } = await pool.query(sql, [idOrSlug]);
@@ -54,11 +55,12 @@ export async function getDocumentPreviewById(idOrSlug) {
     slug: row.slug,
     tags: row.tags || [],
     status: row.status,
+    category_id: row.category_id, // add this line
     created: row.created,
     updated: row.updated,
     content: {
-      markdown: markdown, // convenient for your viewer/editor
-      json: row.content_json, // full json if you need it
+      markdown: markdown,
+      json: row.content_json,
     },
   };
 }
@@ -72,6 +74,10 @@ export async function updateDocumentByIdOrSlug(idOrSlug, payload) {
   // dynamic SET builder
   const sets = [];
   const vals = [idOrSlug];
+  if (Object.prototype.hasOwnProperty.call(payload, "category_id")) {
+    sets.push(`category_id = $${vals.length + 1}`);
+    vals.push(payload.category_id);
+  }
 
   if (Object.prototype.hasOwnProperty.call(payload, "title")) {
     sets.push(`title = $${vals.length + 1}`);

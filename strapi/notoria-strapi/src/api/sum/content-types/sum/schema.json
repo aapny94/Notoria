@@ -1,0 +1,18 @@
+{
+  "kind": "collectionType",
+  "collectionName": "sums",
+  "info": {
+    "singularName": "sum",
+    "pluralName": "sums",
+    "displayName": "sum"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    }
+  }
+}

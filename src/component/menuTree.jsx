@@ -8,11 +8,63 @@ import {
   ListItemText,
   Typography,
   Collapse,
+  Tooltip,
+  Chip,
+  Stack,
 } from "@mui/material";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router-dom"; // <-- import useParams
+import { getArticles } from "../api/apiArticles.js";
+
+// --- helpers to normalize (flat -> tree) and create preview data ---
+function buildCategoryTree(categories = []) {
+  // categories can be either already nested ({children:[]}) or flat with parent relation
+  const looksNested = categories.some(
+    (c) => Array.isArray(c.children) && c.children.length > 0
+  );
+  if (looksNested) return categories;
+
+  // assume flat shape: { id, name, parent?: { id }, titles?: [...] }
+  const byId = new Map();
+  categories.forEach((c) =>
+    byId.set(c.id, { ...c, children: c.children ?? [] })
+  );
+
+  const roots = [];
+  byId.forEach((c) => {
+    const parentId = c.parent?.id ?? c.parent ?? null;
+    if (parentId && byId.has(parentId)) {
+      const parent = byId.get(parentId);
+      parent.children = parent.children || [];
+      parent.children.push(c);
+    } else {
+      roots.push(c);
+    }
+  });
+  return roots;
+}
+
+function makeCategoryPreview(node) {
+  const titleCount = Array.isArray(node.titles)
+    ? node.titles.length
+    : node.titlesCount ?? 0;
+  const childCount = Array.isArray(node.children)
+    ? node.children.length
+    : node.childrenCount ?? 0;
+  console.log(
+    "flat map sample",
+    flat.map((f) => ({ id: f.id, name: f.name, parentId: f.parent?.id }))
+  );
+  return {
+    titleCount,
+    childCount,
+    description: node.description || "",
+  };
+}
 
 function Titles({ items = [], depth = 0, activeId }) {
+  console.log("Titles items:", items);
+
   const navigate = useNavigate();
   if (!items?.length) return null;
   return (
@@ -28,14 +80,14 @@ function Titles({ items = [], depth = 0, activeId }) {
         <ListItem key={t.id} disablePadding sx={{ pl: depth * 2 }}>
           <ListItemButton dense onClick={() => navigate(`/${t.id}`)}>
             <ListItemText
+              primary={t.title}
               primaryTypographyProps={{
                 variant: "body2",
                 color: t.id === activeId ? "rgba(237, 129, 119, 1)" : undefined,
                 fontWeight: t.id === activeId ? 500 : undefined,
-                noWrap: true, // Add this line
-                sx: { maxWidth: 190 }, // Optional: set max width for ellipsis
+                noWrap: true,
+                sx: { maxWidth: 190 },
               }}
-              primary={t.title}
             />
           </ListItemButton>
         </ListItem>
@@ -97,12 +149,88 @@ export default function MenuTree() {
 
   useEffect(() => {
     listMenu()
-      .then(setTree)
+      .then((payload) => {
+        const raw = Array.isArray(payload) ? payload : payload?.data ?? [];
+
+        const flat = raw.map((cat) => {
+          const attrs = cat.attributes || cat;
+          const parentData = attrs.parent?.data || attrs.parent || null;
+          const childrenData = attrs.children?.data || attrs.children || [];
+          const titlesData = attrs.titles?.data || attrs.titles || [];
+          return {
+            id: cat.id ?? attrs.id,
+            name: attrs.name,
+            parent: parentData ? { id: parentData.id } : null,
+            children: Array.isArray(childrenData)
+              ? childrenData.map((c) => ({
+                  id: c.id ?? c?.attributes?.id,
+                  name: c.attributes?.name || c.name,
+                }))
+              : [],
+            titles: Array.isArray(titlesData)
+              ? titlesData.map((t) => ({
+                  id: t.id ?? t?.attributes?.id,
+                  title: t.attributes?.title || t.title,
+                }))
+              : [],
+            description: attrs.description || "",
+          };
+        });
+
+        // 👇 put debug log right here
+        console.log(
+          "flat map sample",
+          flat.map((f) => ({ id: f.id, name: f.name, parentId: f.parent?.id }))
+        );
+
+        const treeData = buildCategoryTree(flat);
+        setTree(treeData);
+      })
       .catch((error) => {
-        console.error(error);
+        console.error("menuTree/listMenu error:", error);
       });
   }, []);
 
+  useEffect(() => {
+    Promise.all([listMenu(), getArticles()]).then(([categories, docs]) => {
+      // Map categories
+      const flat = categories.map((cat) => ({
+        ...cat,
+        titles: [],
+      }));
+
+      // Attach articles to categories
+      docs.forEach((doc) => {
+        const catId = doc.category?.id;
+        if (!catId) return;
+        const cat = flat.find((c) => c.id === catId);
+        if (cat) {
+          cat.titles.push({
+            id: doc.id,
+            title: doc.title,
+          });
+        }
+      });
+
+      // 👇 Debug: log all article IDs and titles in the menu
+      flat.forEach((cat) => {
+        cat.titles.forEach((t) => {
+          console.log(
+            "Menu article ID:",
+            t.id,
+            "Title:",
+            t.title,
+            "Category:",
+            cat.name
+          );
+        });
+      });
+
+      // Build tree and set state
+      const treeData = buildCategoryTree(flat);
+      setTree(treeData);
+    });
+  }, []);
   return (
     <Box sx={{ textAlign: "left", pr: 1 }}>
       <Typography

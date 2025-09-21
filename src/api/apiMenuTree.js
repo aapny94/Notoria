@@ -1,16 +1,10 @@
-import axios from 'axios';
+// src/api/apiMenuTree.js
+import { getUserCategories, getCategories } from "./apiCategory.js";
 
-const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
-
-export const listMenu = async () => {
-    try {
-        const response = await axios.get(`${BASE_URL}/api/menu`);
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching menu list:', error);
-        throw error;
-    }
-};
-
-
-
+export async function listMenu() {
+  // Prefer the safe fallbackable call
+  const payload = await getUserCategories(); // will fall back to getCategories() on 404/500
+  // Accept either array or wrapped
+  const raw = Array.isArray(payload) ? payload : payload?.data ?? payload ?? [];
+  return raw;
+}

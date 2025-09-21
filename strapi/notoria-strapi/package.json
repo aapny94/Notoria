@@ -1,0 +1,39 @@
+{
+  "name": "notoria-strapi",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A Strapi application",
+  "scripts": {
+    "build": "strapi build",
+    "console": "strapi console",
+    "deploy": "strapi deploy",
+    "dev": "strapi develop",
+    "develop": "strapi develop",
+    "seed:example": "node ./scripts/seed.js",
+    "start": "strapi start",
+    "strapi": "strapi",
+    "upgrade": "npx @strapi/upgrade latest",
+    "upgrade:dry": "npx @strapi/upgrade latest --dry"
+  },
+  "dependencies": {
+    "@strapi/plugin-cloud": "5.23.4",
+    "@strapi/plugin-documentation": "^5.23.4",
+    "@strapi/plugin-users-permissions": "5.23.4",
+    "@strapi/strapi": "5.23.4",
+    "fs-extra": "^10.0.0",
+    "mime-types": "^2.1.27",
+    "pg": "8.8.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "react-router-dom": "^6.0.0",
+    "styled-components": "^6.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0 <=22.x.x",
+    "npm": ">=6.0.0"
+  },
+  "strapi": {
+    "uuid": "d76d0ccf-54d1-4f6d-8a29-5fdc3812f85c",
+    "installId": "4bc7f368fd5d6cfb3cff9029bff0d46ece69c668718428c54bac70aec1d2901c"
+  }
+}

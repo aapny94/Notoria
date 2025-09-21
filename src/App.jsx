@@ -16,7 +16,10 @@ const TOKEN_EXPIRY_HOURS = 2; // 2 hours
 function useAuth() {
   const token = localStorage.getItem(TOKEN_KEY);
   const expiry = localStorage.getItem(TOKEN_KEY + "_expiry");
-  if (!token || !expiry) return false;
+  const user = JSON.parse(localStorage.getItem(TOKEN_KEY + "_user") || "null");
+  if (!token || !expiry || !user) return false;
+  // Strapi user has an 'blocked' property for active status
+  if (user.blocked) return false;
   return Date.now() < Number(expiry);
 }
 
@@ -38,7 +41,7 @@ function App() {
           <Routes>
             {/* Edit page must come first to avoid any ambiguity */}
             <Route
-              path="/edit/:idOrSlug/*"
+              path="/edit/:id"
               element={
                 <ProtectedRoute>
                   <Edit />
@@ -58,7 +61,7 @@ function App() {
 
             {/* Home with a single param for preview */}
             <Route
-              path="/:idOrSlug"
+              path="/:id"
               element={
                 <ProtectedRoute>
                   <Home />

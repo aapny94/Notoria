@@ -1,50 +1,99 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { getDocumentByIdOrSlug } from "../api/apiDocumentContent";
+import { useParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import "highlight.js/styles/github-dark.css"; // code block theme
-import { Box, IconButton } from "@mui/material";
-import EditIcon from "@mui/icons-material/Edit";
+import { useNavigate } from "react-router-dom";
+import Chip from "@mui/material/Chip";
 import DeleteIcon from "@mui/icons-material/Delete";
 import remarkMark from "remark-mark";
 import rehypeRaw from "rehype-raw";
+import { getArticleById } from "../api/apiArticle";
+import "highlight.js/styles/github-dark.css";
+// Normalize a Strapi Article payload into the internal "doc" shape
 
-function slugify(text) {
-  return (
-    String(text)
-      .toLowerCase()
-      .trim()
-      // dash is escaped to avoid being interpreted as a range
-      .replace(/[`~!@#$%^&*()+=\[\]{}|;:'",.<>/?-]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-")
-  );
+function formatDateTime(isoString) {
+  if (!isoString) return "";
+  const date = new Date(isoString);
+  return date.toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+function normalizeDoc(node) {
+  if (!node) return {};
+  return {
+    id: node.id ?? null,
+    slug: node.slug ?? null,
+    title: node.title ?? node.Title ?? "",
+    summary: node.summary ?? node.Summary ?? "",
+    tags: Array.isArray(node.Tags)
+      ? node.Tags
+      : Array.isArray(node.tags)
+      ? node.tags
+      : [],
+    status: node.publishedAt ? "Published" : "Draft",
+    updated: node.updatedAt ?? node.updated ?? null,
+    category: node.category?.name ?? null,
+    content: {
+      markdown:
+        typeof node.content === "string"
+          ? node.content
+          : Array.isArray(node.blocks)
+          ? node.blocks
+              .map((b) =>
+                b?.__component === "shared.rich-text" &&
+                typeof b.body === "string"
+                  ? b.body
+                  : null
+              )
+              .filter(Boolean)
+              .join("\n\n")
+          : "",
+    },
+  };
+}
+function extractHeadings(markdown) {
+  if (!markdown) return [];
+  // Match lines starting with one or more # (markdown headings)
+  return markdown
+    .split("\n")
+    .filter((line) => /^#{1,6}\s/.test(line))
+    .map((line) => {
+      const match = line.match(/^(#{1,6})\s+(.*)/);
+      return match ? { level: match[1].length, text: match[2] } : null;
+    })
+    .filter(Boolean);
 }
 
-function DocPreviewPage({ idOrSlug: propId }) {
-  const navigate = useNavigate(); // ✅ get navigate hook
-
-  const params = useParams();
-  const idOrSlug = propId ?? params.idOrSlug ?? null;
+function DocPreviewPage() {
+  const { id } = useParams();
+  const navigate = useNavigate(); // <-- Add this line
 
   const [doc, setDoc] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const headings = extractHeadings(doc?.content?.markdown);
 
   useEffect(() => {
-    if (!idOrSlug) {
+    if (!id) {
       setDoc(null);
       setError("");
       setLoading(false);
       return;
     }
-
     setLoading(true);
-    getDocumentByIdOrSlug(idOrSlug)
-      .then((data) => {
-        setDoc(data);
+    console.log("Fetching article with id:", id);
+    getArticleById(id)
+      .then((d) => {
+        console.log("API response:", d);
+        const normalized = normalizeDoc(d);
+        setDoc(normalized);
         setError("");
       })
       .catch((err) => {
@@ -52,236 +101,131 @@ function DocPreviewPage({ idOrSlug: propId }) {
         console.error("Error fetching document:", err);
       })
       .finally(() => setLoading(false));
-  }, [idOrSlug]);
+  }, [id]);
 
-  const markdown = (doc?.content?.markdown || "").replace(/\r\n/g, "\n");
-  const highlightedMarkdown = markdown.replace(
-    /==([^=]+)==/g,
-    "<mark>$1</mark>"
-  );
-  // Extract headings for TOC (H1–H4; extend if you like)
-  const toc = useMemo(() => {
-    const lines = markdown.split("\n");
-    const items = [];
-    for (const ln of lines) {
-      const m = ln.match(/^(#{1,4})\s+(.+?)\s*$/); // up to ####; adjust if needed
-      if (!m) continue;
-      const level = m[1].length;
-      const text = m[2].replace(/#+\s*$/, ""); // trim trailing #'s
-      const id = slugify(text);
-      items.push({ level, text, id });
-    }
-    // De-dup ids if repeated headings
-    const seen = new Map();
-    return items.map(({ level, text, id }) => {
-      const count = seen.get(id) || 0;
-      seen.set(id, count + 1);
-      return { level, text, id: count ? `${id}-${count}` : id };
-    });
-  }, [markdown]);
-
-  if (!idOrSlug)
-    return (
-      <div style={{ padding: 16, opacity: 0.7 }}>
-        Select a document from the menu.
-      </div>
-    );
-  if (loading) return <div style={{ padding: 16 }}>Loading…</div>;
-  if (error) return <div style={{ padding: 16 }}>{error}</div>;
-  if (!doc) return null;
-
-  // Inject the same ids when rendering headings so anchors work
-  const components = {
-    h1({ node, children, ...props }) {
-      const text = String(children?.[0] ?? "");
-      const id = slugify(text);
-      return (
-        <h1 id={id} {...props}>
-          {children}
-        </h1>
-      );
-    },
-    h2({ node, children, ...props }) {
-      const text = String(children?.[0] ?? "");
-      const id = slugify(text);
-      return (
-        <h2 id={id} {...props}>
-          {children}
-        </h2>
-      );
-    },
-    h3({ node, children, ...props }) {
-      const text = String(children?.[0] ?? "");
-      const id = slugify(text);
-      return (
-        <h3 id={id} {...props}>
-          {children}
-        </h3>
-      );
-    },
-    h4({ node, children, ...props }) {
-      const text = String(children?.[0] ?? "");
-      const id = slugify(text);
-      return (
-        <h4 id={id} {...props}>
-          {children}
-        </h4>
-      );
-    },
-  };
-
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>{error}</div>;
+  if (!doc) return <div>No document found.</div>;
+  if (!doc || !doc.content || !doc.content.markdown) {
+    return <div>No content available.</div>;
+  }
   return (
-    <div
-      className="docPreview"
-      style={{
-        padding: 16,
-        width: "100%",
-        display: "flex",
-        flexDirection: "row",
-      }}
-    >
-      <div style={{ flex: 1, maxWidth: "80%", paddingRight: "1.5rem" }}>
-        <Box
+    <div style={{ display: "flex", flexDirection: "row" }}>
+      <div style={{ height: "calc(100vh - 73px)", overflowY: "auto", flex: 1 }}>
+        <div
+          className="bgSpecial"
           style={{
+            padding: "1.5em 1.5em 1em 1.5em",
+            border: "1px solid #393939ff",
+            borderRadius: "1em",
+            margin: "1.5em 1.5em -1.5em 1.5em",
+            boxShadow: "0 4px 30px rgba(0, 0, 0, 0.39)",
             display: "flex",
             flexDirection: "row",
-            justifyContent: "flex-end",
           }}
         >
-          <IconButton
-            variant="outlined"
-            style={{ width: "fit-content", padding: 10, marginBottom: -6 }}
-            onClick={() => navigate(`/edit/${doc.slug || doc.id}`)} // ✅ navigate on click
-          >
-            <EditIcon style={{ fontSize: "1.5rem" }} />
-          </IconButton>
-          <IconButton
-            variant="outlined"
-            style={{ width: "fit-content", padding: 10, marginBottom: -6 }}
-          >
-            <DeleteIcon style={{ fontSize: "1.5rem" }} />
-          </IconButton>
-        </Box>
-        {Array.isArray(doc.tags) && doc.tags.length > 0 && (
-          <div
-            style={{
-              display: "flex",
-              gap: 5,
-              flexWrap: "wrap",
-              textAlign: "right",
-              contentAlign: "flex-end",
-              flexDirection: "row",
-              margin: "auto",
-              width: "100%",
-              margin: "-2px 0 16px 0",
-            }}
-          >
-            {doc.tags.map((tag) => (
-              <span
-                key={tag}
-                style={{
-                  fontSize: 12,
-                  padding: "2px 10px",
-                  borderRadius: 999,
-                  border: "1px solid #3a3a3a",
-                  background: "#1f1f1f",
-                  color: "#ddd",
-                  width: "fit-content",
-                }}
-              >
-                #{tag}
-              </span>
-            ))}
+          <div>
+            <p className="preview-title">{doc.category} </p>
+            <h2
+              style={{
+                fontSize: "1.5rem",
+                margin: "0",
+                marginTop: ".75em",
+                marginBottom: ".5em",
+              }}
+            >
+              {doc.title}
+            </h2>
+            <span
+              style={{
+                fontSize: "0.75rem",
+                fontWeight: "600",
+                color: "#e0e0e0ff",
+                padding: ".25em 1.25em",
+                background: "#3d3d3dff",
+                borderRadius: "2em",
+                width: "fit-content",
+                marginBottom: "1.5em",
+              }}
+            >
+              {doc.status} | {formatDateTime(doc.updated)}
+            </span>
           </div>
-        )}
-        <h2 style={{ marginTop: 0 }}>{doc.title}</h2>
-        {doc.summary && <p style={{ marginTop: 0 }}>{doc.summary}</p>}
-
-        <div
-          style={{
-            marginBottom: 12,
-            background: "rgba(113, 113, 113, 1)",
-            width: "fit-content",
-            padding: "2px 16px",
-            borderRadius: 50,
-            fontSize: 14,
-            background: "#ef4132",
-            color: "rgba(255, 255, 255, 1)",
-          }}
-        >
-          {doc.status} | {new Date(doc.updated).toLocaleString()}
         </div>
 
-        {/* Markdown renderer with code highlighting */}
         <div
+          className="markdown-preview"
           style={{
-            lineHeight: 1.6,
-            borderTop: ".01px solid #313131ff",
-            paddingTop: 1,
-            marginTop: 18,
+            padding: "2em 3em",
           }}
         >
           <ReactMarkdown
+            children={doc.content.markdown}
             remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeRaw, rehypeHighlight]}
-            components={{
-              mark: ({ children }) => (
-                <mark
-                  style={{
-                    background: "#ffe066",
-                    color: "#222",
-                    borderRadius: "4px",
-                    padding: "0 4px",
-                  }}
-                >
-                  {children}
-                </mark>
-              ),
-              // ...other custom components...
-            }}
-          >
-            {highlightedMarkdown}
-          </ReactMarkdown>
+            rehypePlugins={[
+              [rehypeHighlight, { detect: true, ignoreMissing: true }],
+            ]}
+          />
         </div>
       </div>
-
-      {/* sticky TOC */}
-      <aside
-        style={{
-          position: "sticky",
-          top: 16,
-          paddingLeft: 16,
-          width: "20%",
-          maxHeight: "90vh",
-          overflowY: "auto",
-          flexShrink: 0,
-        }}
-      >
-        <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 8 }}>
-          On this page
+      <div style={{ padding: "0 2em 0 2em", width: "330px" }}>
+        <div
+          style={{
+            float: "right",
+            width: "230px",
+            padding: "1em",
+            borderRadius: "8px",
+          }}
+        >
+          <p className="preview-title">On this page</p>
+          {headings.map((h, i) => (
+            <h4 key={i}>{h.text}</h4>
+          ))}
         </div>
-        <nav>
-          <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-            {toc.map(({ level, text, id }) => (
-              <li
-                key={id}
-                style={{ marginBottom: 6, paddingLeft: (level - 1) * 12 }}
-              >
-                <a
-                  href={`#${id}`}
-                  style={{
-                    textDecoration: "none",
-                    color: "inherit",
-                    opacity: 0.9,
-                  }}
-                >
-                  {text}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </aside>
+        <div className="summaryContainer">
+          <p className="preview-title">Title</p>
+
+          <h4>{doc.title}</h4>
+        </div>
+        <div className="summaryContainer">
+          <p className="preview-title">Summary</p>
+
+          <p>{doc.summary}</p>
+        </div>
+
+        <div
+          style={{
+            padding: "1em 1em 0 1em",
+            display: "flex",
+            flexWrap: "wrap",
+            flexDirection: "row",
+            gap: "0.2em",
+          }}
+        >
+          {doc.tags && Array.isArray(doc.tags) && doc.tags.length > 0
+            ? doc.tags.map((tag, idx) => (
+                <Chip key={idx} label={tag} sx={{ width: "fit-content" }} />
+              ))
+            : null}
+        </div>
+
+        <button
+          style={{
+            margin: "2rem 1rem 1rem 1rem",
+
+            padding: "9px 12px",
+            background: "#ef4132",
+            color: "#fff",
+            border: "none",
+            borderRadius: 3,
+            cursor: "pointer",
+            fontWeight: "bold",
+          }}
+          onClick={() => navigate(`/edit/${id}`)}
+        >
+          Edit
+        </button>
+      </div>
     </div>
   );
 }

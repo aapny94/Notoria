@@ -1,8 +1,9 @@
 import express from "express";
 import { dataBuildingById, listBuildings } from "../controllers/buildingController-sample.js"; // sample call from controller //
-import { getCategoryMenu } from "../controllers/categoryController.js";
+import { getCategoryMenu, postCategory } from "../controllers/categoryController.js";
 import { getDocumentPreview } from "../controllers/documentController.js";
 import { updateDocument } from "../controllers/documentController.js";
+import { getAllCategories } from "../controllers/categoryController.js";
 // import all the controller bellow here //
 
 
@@ -19,6 +20,8 @@ router.get("/buildings/:id", dataBuildingById); // sample route //
 router.get("/menu", getCategoryMenu);
 router.get("/docs/:idOrSlug", getDocumentPreview);
 router.put("/docs/:idOrSlug", updateDocument); // 👈 add this
+router.post("/categories", postCategory);
+router.get("/categories", getAllCategories);
 
 export default router; // do not delete //
 

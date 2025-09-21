@@ -14,7 +14,6 @@ import typescript from "highlight.js/lib/languages/typescript";
 import json from "highlight.js/lib/languages/json";
 import bash from "highlight.js/lib/languages/bash";
 
-
 lowlight.register("javascript", javascript);
 lowlight.register("js", javascript);
 lowlight.register("typescript", typescript);
@@ -61,28 +60,36 @@ function normalizeInitial(initialContent) {
   return "<p></p>";
 }
 
-export default function DocEditor({ initialContent, onChange }) {
+export default function DocEditor({ initialContent, onChange, onReady }) {
   const editor = useEditor({
     extensions: [
-    StarterKit,
-    Link,
-    Underline,
-    Highlight,
-    CodeBlockLowlight.configure({ lowlight }),
-    Blockquote,
-    Code,
+      StarterKit,
+      Link,
+      Underline,
+      Highlight,
+
+      Blockquote,
+      Code,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
     ],
     content: normalizeInitial(initialContent),
-    onCreate: ({ editor }) => onChange?.(editor.getJSON()),
+    onCreate: ({ editor }) => {
+      onChange?.(editor.getJSON());
+      onReady?.(editor); // <-- Pass editor instance up!
+    },
     onUpdate: ({ editor }) => onChange?.(editor.getJSON()),
   });
-
   // Keep editor in sync if parent replaces initialContent
   useEffect(() => {
     if (!editor) return;
     editor.commands.setContent(normalizeInitial(initialContent), false);
   }, [initialContent, editor]);
+
+  useEffect(() => {
+    if (editor && onReady) {
+      onReady(editor);
+    }
+  }, [editor, onReady]);
 
   if (!editor) return null;
 
@@ -107,9 +114,7 @@ export default function DocEditor({ initialContent, onChange }) {
   return (
     <div
       style={{
-        border: "1px solid #444",
         borderRadius: 8,
-        background: "#0f0f0f",
       }}
     >
       {/* Toolbar */}
@@ -117,10 +122,11 @@ export default function DocEditor({ initialContent, onChange }) {
         style={{
           display: "flex",
           gap: 6,
-          alignItems: "center",
           padding: 8,
           borderBottom: "1px solid #333",
           position: "sticky",
+          justifyContent: "center", // <-- add this line
+
           top: 0,
           flexDirection: "row",
           background: "#0f0f0f",
@@ -235,8 +241,12 @@ export default function DocEditor({ initialContent, onChange }) {
       </div>
 
       {/* Editor area */}
-      <div style={{ padding: 12 }}>
-        <EditorContent editor={editor} />
+      <div style={{}}>
+        <EditorContent
+          style={{ background: "none", border: "none" }}
+          className="editor-content"
+          editor={editor}
+        />
       </div>
     </div>
   );
