@@ -11,6 +11,7 @@ import DocEditPage from "./pages/docEditPage.jsx";
 import Edit from "./pages/edit.jsx";
 import DocCreatePage from "./pages/docCreatePage.jsx";
 import Create from "./pages/create.jsx";
+import CategoryPage from "./pages/categoryPage.jsx";
 
 const TOKEN_KEY = import.meta.env.VITE_TOKEN_KEY || "app_token";
 const TOKEN_EXPIRY_HOURS = 2; // 2 hours
@@ -76,6 +77,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Create />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/category"
+              element={
+                <ProtectedRoute>
+                  <CategoryPage />
                 </ProtectedRoute>
               }
             />

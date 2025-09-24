@@ -88,17 +88,14 @@ function DocPreviewPage() {
       return;
     }
     setLoading(true);
-    console.log("Fetching article with id:", id);
     getArticleById(id)
       .then((d) => {
-        console.log("API response:", d);
         const normalized = normalizeDoc(d);
         setDoc(normalized);
         setError("");
       })
       .catch((err) => {
         setError("Error fetching document");
-        console.error("Error fetching document:", err);
       })
       .finally(() => setLoading(false));
   }, [id]);
@@ -170,6 +167,7 @@ function DocPreviewPage() {
       </div>
       <div style={{ padding: "0 2em 0 2em", width: "330px" }}>
         <div
+        className="onThisPageContainer"
           style={{
             float: "right",
             width: "230px",

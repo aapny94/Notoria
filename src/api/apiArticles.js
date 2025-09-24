@@ -1,4 +1,3 @@
-
 const TOKEN_KEY = import.meta.env.VITE_TOKEN_KEY || "app_token";
 const STRAPI_URL = import.meta.env.VITE_STRAPI_URL;
 
@@ -9,5 +8,6 @@ export async function getArticles() {
   });
   if (!response.ok) throw new Error("Failed to fetch articles");
   const data = await response.json();
+
   return data.data || [];
 }

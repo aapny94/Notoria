@@ -139,7 +139,6 @@ export default function DocEditPage() {
     setLoading(true);
     getDocById(id)
       .then((rawDoc) => {
-        console.log("getDocById rawDoc →", rawDoc); // <-- add this
 
         const doc = normalizeDoc(rawDoc);
         setDoc(doc);
@@ -168,11 +167,7 @@ export default function DocEditPage() {
       setTags(Array.isArray(doc?.tags) ? doc.tags : []);
       setContentJson(doc?.content?.markdown || "");
     }
-    console.log({
-      currentMarkdown: editorRef.current?.getInstance()?.getMarkdown(),
-      initialMarkdown: initialState?.contentJson,
-      isChanged: isChanged(),
-    });
+
   }, [doc, editorRef.current, initialState]);
   // save changes
   const handleSave = async () => {

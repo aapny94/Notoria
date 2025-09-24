@@ -4,6 +4,7 @@ import "@toast-ui/editor/dist/toastui-editor.css";
 import { getCategories } from "../api/apiCategory";
 import { createDoc } from "../api/apiDocumentContent"; // You need to implement this API call
 import { useNavigate } from "react-router-dom";
+import { getUserCategories } from "../api/apiCategory"; // <-- import this
 
 import * as jwt_decode from "jwt-decode";
 const decode = jwt_decode.default || jwt_decode;
@@ -33,7 +34,7 @@ export default function DocCreatePage() {
   const [editorChanged, setEditorChanged] = useState(false);
   const navigate = useNavigate();
   useEffect(() => {
-    getCategories().then((data) => setCategories(data));
+    getUserCategories().then((data) => setCategories(data));
   }, []);
 
   const toolbarItems = [

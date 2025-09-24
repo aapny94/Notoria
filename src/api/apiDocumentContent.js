@@ -90,7 +90,6 @@ export async function getDocById(id) {
   return getDocByKey(id);
 }
 
-
 export async function createDoc(payload) {
   const token = localStorage.getItem(TOKEN_KEY); // Or your token key
   const res = await fetch(`${STRAPI_URL}/api/docs`, {

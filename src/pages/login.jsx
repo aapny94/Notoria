@@ -34,7 +34,18 @@ function Login() {
       if (data.jwt) {
         localStorage.setItem(TOKEN_KEY, data.jwt);
         localStorage.setItem(TOKEN_KEY + "_user", JSON.stringify(data.user));
-        localStorage.setItem(TOKEN_KEY + "_expiry", Date.now() + TOKEN_EXPIRY_HOURS * 60 * 60 * 1000);
+        localStorage.setItem(
+          TOKEN_KEY + "_expiry",
+          Date.now() + TOKEN_EXPIRY_HOURS * 60 * 60 * 1000
+        );
+
+        console.log("JWT token:", localStorage.getItem(TOKEN_KEY));
+        console.log("User object:", localStorage.getItem(TOKEN_KEY + "_user"));
+        console.log(
+          "Token expiry:",
+          localStorage.getItem(TOKEN_KEY + "_expiry")
+        );
+
         navigate("/");
       } else {
         setError(data.error?.message || "Invalid credentials");

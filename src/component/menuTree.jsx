@@ -44,58 +44,58 @@ function buildCategoryTree(categories = []) {
   return roots;
 }
 
-function makeCategoryPreview(node) {
-  const titleCount = Array.isArray(node.titles)
-    ? node.titles.length
-    : node.titlesCount ?? 0;
-  const childCount = Array.isArray(node.children)
-    ? node.children.length
-    : node.childrenCount ?? 0;
-  console.log(
-    "flat map sample",
-    flat.map((f) => ({ id: f.id, name: f.name, parentId: f.parent?.id }))
-  );
-  return {
-    titleCount,
-    childCount,
-    description: node.description || "",
-  };
-}
-
 function Titles({ items = [], depth = 0, activeId }) {
-  console.log("Titles items:", items);
-
   const navigate = useNavigate();
   if (!items?.length) return null;
   return (
     <Box
       sx={{
-        ml: depth === 0 ? 0 : 3,
+        ml: depth === 0 ? 0 : 1,
         pl: 1.5,
         borderLeft: 1,
         borderColor: "divider",
       }}
     >
-      {items.map((t) => (
-        <ListItem key={t.id} disablePadding sx={{ pl: depth * 2 }}>
-          <ListItemButton dense onClick={() => navigate(`/${t.id}`)}>
-            <ListItemText
-              primary={t.title}
-              primaryTypographyProps={{
-                variant: "body2",
-                color: t.id === activeId ? "rgba(237, 129, 119, 1)" : undefined,
-                fontWeight: t.id === activeId ? 500 : undefined,
-                noWrap: true,
-                sx: { maxWidth: 190 },
-              }}
-            />
-          </ListItemButton>
-        </ListItem>
-      ))}
+      {items.map((t) => {
+        const isActive = String(t.id) === String(activeId);
+        return (
+          <ListItem
+            key={t.id}
+            disablePadding
+            sx={{
+              ml: isActive ? -2  : -1.6,
+              pl: 2,
+              borderLeft: 1,
+              borderColor: "divider",
+              borderLeft: isActive ? "3px solid #ED8177 !important" : "none",
+              fontWeight: isActive ? 700 : 400,
+            }}
+          >
+            <ListItemButton
+              dense
+              onClick={() => navigate(`/${t.id}`)}
+              sx={
+                {
+                  // Remove border/fontWeight/color from here
+                }
+              }
+            >
+              <ListItemText
+                primary={t.title}
+                primaryTypographyProps={{
+                  variant: "body2",
+                  noWrap: true,
+                  fontSize: "0.85rem",
+                  sx: { maxWidth: 190 },
+                }}
+              />
+            </ListItemButton>
+          </ListItem>
+        );
+      })}
     </Box>
   );
 }
-
 function Node({ node, depth = 0, activeId }) {
   const [open, setOpen] = useState(true);
   const hasChildren = Array.isArray(node.children) && node.children.length > 0;
@@ -115,6 +115,7 @@ function Node({ node, depth = 0, activeId }) {
               variant: depth === 0 ? "subtitle1" : "body1",
               fontWeight: depth === 0 ? 600 : 500,
               marginTop: depth === 0 ? 0 : 0,
+              fontSize: ".9rem",
             }}
             primary={node.name}
           />
@@ -143,10 +144,52 @@ function Node({ node, depth = 0, activeId }) {
   );
 }
 
+function filterTree(tree, search) {
+  if (!search) return tree;
+  const lower = search.toLowerCase();
+
+  function matchNode(node) {
+    if (node.name?.toLowerCase().includes(lower)) return true;
+    if (
+      node.titles?.some(
+        (t) =>
+          t.title?.toLowerCase().includes(lower) ||
+          (Array.isArray(t.tags) &&
+            t.tags.some((tag) => tag.toLowerCase().includes(lower)))
+      )
+    )
+      return true;
+    if (node.children?.some(matchNode)) return true;
+    return false;
+  }
+
+  function filterNode(node) {
+    if (matchNode(node)) {
+      return {
+        ...node,
+        children: node.children?.map(filterNode).filter(Boolean) || [],
+        titles: node.name?.toLowerCase().includes(lower)
+          ? node.titles
+          : node.titles?.filter(
+              (t) =>
+                t.title?.toLowerCase().includes(lower) ||
+                (Array.isArray(t.tags) &&
+                  t.tags.some((tag) => tag.toLowerCase().includes(lower)))
+            ) || [],
+      };
+    }
+    return null;
+  }
+
+  return tree.map(filterNode).filter(Boolean);
+}
+
 export default function MenuTree() {
   const [tree, setTree] = useState([]);
+  const [search, setSearch] = useState("");
   const { idOrSlug } = useParams(); // <-- get active id from URL
-
+  const filteredTree = filterTree(tree, search);
+  const { id } = useParams();
   useEffect(() => {
     listMenu()
       .then((payload) => {
@@ -174,25 +217,22 @@ export default function MenuTree() {
                 }))
               : [],
             description: attrs.description || "",
+            tags: attrs.tags || [], // <-- add this line
           };
         });
 
         // 👇 put debug log right here
-        console.log(
-          "flat map sample",
-          flat.map((f) => ({ id: f.id, name: f.name, parentId: f.parent?.id }))
-        );
 
         const treeData = buildCategoryTree(flat);
         setTree(treeData);
       })
       .catch((error) => {
-        console.error("menuTree/listMenu error:", error);
       });
   }, []);
 
   useEffect(() => {
     Promise.all([listMenu(), getArticles()]).then(([categories, docs]) => {
+
       // Map categories
       const flat = categories.map((cat) => ({
         ...cat,
@@ -205,25 +245,15 @@ export default function MenuTree() {
         if (!catId) return;
         const cat = flat.find((c) => c.id === catId);
         if (cat) {
-          cat.titles.push({
+          const titleObj = {
             id: doc.id,
             title: doc.title,
-          });
-        }
-      });
+            tags: Array.isArray(doc.Tags) ? doc.Tags : [], // <-- Use doc.Tags here!
+          };
+          cat.titles.push(titleObj);
 
-      // 👇 Debug: log all article IDs and titles in the menu
-      flat.forEach((cat) => {
-        cat.titles.forEach((t) => {
-          console.log(
-            "Menu article ID:",
-            t.id,
-            "Title:",
-            t.title,
-            "Category:",
-            cat.name
-          );
-        });
+          // Debug log
+        }
       });
 
       // Build tree and set state
@@ -233,15 +263,19 @@ export default function MenuTree() {
   }, []);
   return (
     <Box sx={{ textAlign: "left", pr: 1 }}>
-      <Typography
-        variant="subtitle2"
-        sx={{ px: 2, mt: 2, mb: -1, pb: 1, opacity: 0.7, ml: -2 }}
-      >
-        Categories
-      </Typography>
+      <Box sx={{ px: 2, pt: 2 }}>
+        <input
+          type="text"
+          placeholder="Search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{ width: "100%", padding: "8px", fontSize: "1rem" }}
+        />
+      </Box>
+
       <List dense disablePadding>
-        {tree.map((node) => (
-          <Node key={node.id} node={node} activeId={idOrSlug} />
+        {filteredTree.map((node) => (
+          <Node key={node.id} node={node} activeId={id} />
         ))}
       </List>
     </Box>
