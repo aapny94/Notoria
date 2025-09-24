@@ -15,6 +15,12 @@ import {
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router-dom"; // <-- import useParams
 import { getArticles } from "../api/apiArticles.js";
+import SearchIcon from "@mui/icons-material/Search";
+
+function capitalize(str) {
+  if (!str) return "";
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
 
 // --- helpers to normalize (flat -> tree) and create preview data ---
 function buildCategoryTree(categories = []) {
@@ -63,7 +69,7 @@ function Titles({ items = [], depth = 0, activeId }) {
             key={t.id}
             disablePadding
             sx={{
-              ml: isActive ? -2  : -1.6,
+              ml: isActive ? -2 : -1.6,
               pl: 2,
               borderLeft: 1,
               borderColor: "divider",
@@ -81,7 +87,7 @@ function Titles({ items = [], depth = 0, activeId }) {
               }
             >
               <ListItemText
-                primary={t.title}
+                primary={capitalize(t.title)}
                 primaryTypographyProps={{
                   variant: "body2",
                   noWrap: true,
@@ -117,7 +123,7 @@ function Node({ node, depth = 0, activeId }) {
               marginTop: depth === 0 ? 0 : 0,
               fontSize: ".9rem",
             }}
-            primary={node.name}
+            primary={capitalize(node.name)}
           />
           {isExpandable ? open ? <ExpandLess /> : <ExpandMore /> : null}
         </ListItemButton>
@@ -202,6 +208,8 @@ export default function MenuTree() {
           const titlesData = attrs.titles?.data || attrs.titles || [];
           return {
             id: cat.id ?? attrs.id,
+            title: capitalize(doc.title), // <-- Capitalize the doc title only
+
             name: attrs.name,
             parent: parentData ? { id: parentData.id } : null,
             children: Array.isArray(childrenData)
@@ -226,13 +234,11 @@ export default function MenuTree() {
         const treeData = buildCategoryTree(flat);
         setTree(treeData);
       })
-      .catch((error) => {
-      });
+      .catch((error) => {});
   }, []);
 
   useEffect(() => {
     Promise.all([listMenu(), getArticles()]).then(([categories, docs]) => {
-
       // Map categories
       const flat = categories.map((cat) => ({
         ...cat,
@@ -247,6 +253,8 @@ export default function MenuTree() {
         if (cat) {
           const titleObj = {
             id: doc.id,
+            title: capitalize(doc.title), // <-- Capitalize the doc title only
+
             title: doc.title,
             tags: Array.isArray(doc.Tags) ? doc.Tags : [], // <-- Use doc.Tags here!
           };
@@ -263,17 +271,46 @@ export default function MenuTree() {
   }, []);
   return (
     <Box sx={{ textAlign: "left", pr: 1 }}>
-      <Box sx={{ px: 2, pt: 2 }}>
+      <Box
+        sx={{
+          mt: 3,
+          mb: 1,
+          display: "flex",
+          alignItems: "center",
+          position: "relative",
+        }}
+      >
+        <SearchIcon
+          sx={{
+            position: "absolute",
+            left: 12,
+            top: "50%",
+            transform: "translateY(-50%)",
+            color: "#838383",
+            fontSize: 22,
+            pointerEvents: "none",
+          }}
+        />
         <input
           type="text"
           placeholder="Search"
           value={search}
+          className="inputBox"
           onChange={(e) => setSearch(e.target.value)}
-          style={{ width: "100%", padding: "8px", fontSize: "1rem" }}
+          style={{
+            width: "100%",
+            padding: "11px 11px 11px 38px", // left padding for icon
+            fontSize: "1rem",
+            borderRadius: "10px",
+            border: ".5px solid #83838363",
+            backgroundColor: "#34343471",
+            fontSize: ".9rem",
+          }}
         />
       </Box>
 
-      <List dense disablePadding>
+      <List dense disablePadding
+      style={{ padding: 8, marginTop: -10 }}>
         {filteredTree.map((node) => (
           <Node key={node.id} node={node} activeId={id} />
         ))}

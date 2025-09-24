@@ -11,6 +11,7 @@ import remarkMark from "remark-mark";
 import rehypeRaw from "rehype-raw";
 import { getArticleById } from "../api/apiArticle";
 import "highlight.js/styles/github-dark.css";
+import WelcomePage from "./welcomePage";
 // Normalize a Strapi Article payload into the internal "doc" shape
 
 function formatDateTime(isoString) {
@@ -102,7 +103,7 @@ function DocPreviewPage() {
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
-  if (!doc) return <div>No document found.</div>;
+  if (!doc) return <WelcomePage />;
   if (!doc || !doc.content || !doc.content.markdown) {
     return <div>No content available.</div>;
   }

@@ -109,22 +109,24 @@ export default function DocEditPage() {
   }, []);
 
   const editorRef = useRef();
+
   useEffect(() => {
     if (!editorRef.current) return;
     const instance = editorRef.current.getInstance();
     const handler = () => setEditorChanged((v) => !v);
     instance.on("change", handler);
 
-    // Cleanup on unmount
     return () => {
       instance.off("change", handler);
     };
   }, [editorRef.current]);
+
   useEffect(() => {
     if (doc && doc.category_id) {
       setSelectedCategory(doc.category_id);
     }
   }, [doc]);
+
   // fetch current document
   useEffect(() => {
     if (!id) {
@@ -139,7 +141,6 @@ export default function DocEditPage() {
     setLoading(true);
     getDocById(id)
       .then((rawDoc) => {
-
         const doc = normalizeDoc(rawDoc);
         setDoc(doc);
         setTitle(doc.title);
@@ -156,18 +157,17 @@ export default function DocEditPage() {
   }, [id]);
   useEffect(() => {
     if (doc && !initialState) {
+      setTitle(doc?.title || "");
+      setSummary(doc?.summary || "");
+      setTags(Array.isArray(doc?.tags) ? doc.tags : []);
+      setContentJson(doc?.content?.markdown || "");
       setInitialState({
         title: doc?.title || "",
         summary: doc?.summary || "",
         tags: Array.isArray(doc?.tags) ? doc.tags : [],
         contentJson: doc?.content?.markdown || "",
       });
-      setTitle(doc?.title || "");
-      setSummary(doc?.summary || "");
-      setTags(Array.isArray(doc?.tags) ? doc.tags : []);
-      setContentJson(doc?.content?.markdown || "");
     }
-
   }, [doc, editorRef.current, initialState]);
   // save changes
   const handleSave = async () => {
@@ -205,9 +205,16 @@ export default function DocEditPage() {
 
   function isChanged() {
     if (!initialState) return false;
+    // Always get markdown from the editor
     const currentMarkdown =
       editorRef.current?.getInstance()?.getMarkdown() || "";
-    const initialMarkdown = initialState.contentJson || "";
+    // Normalize initial markdown (handle null, object, or string)
+    let initialMarkdown = initialState.contentJson;
+    if (!initialMarkdown) initialMarkdown = "";
+    if (typeof initialMarkdown === "object" && initialMarkdown.markdown)
+      initialMarkdown = initialMarkdown.markdown;
+    if (typeof initialMarkdown !== "string") initialMarkdown = "";
+
     return (
       title !== initialState.title ||
       summary !== initialState.summary ||
@@ -301,7 +308,7 @@ export default function DocEditPage() {
           useCommandShortcut={true}
           hideModeSwitch={true} // Hide the WYSIWYG/Markdown toggle
           toolbarItems={toolbarItems}
-          onChange={() => setEditorChanged((v) => !v)}
+          onChange={() => setEditorChanged((v) => !v)} // <-- this is enough!
         />
         {/* Actions */}
       </div>
@@ -466,8 +473,8 @@ export default function DocEditPage() {
             onClick={handleDelete}
             style={{
               padding: "9px 12px",
-              background: "#ef4132",
-              color: "#fff",
+              background: "#efb932ff",
+              color: "#212121ff",
               border: "none",
               cursor: "pointer",
               opacity: 1,
