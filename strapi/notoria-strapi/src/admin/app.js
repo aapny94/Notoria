@@ -1,5 +1,5 @@
 // src/admin/app.js
-import logo from "./extensions/Notoria-Logo-01.png";
+import logo from "./extensions/logo2.png";
 import en from "./translations/en.json"; // <-- use ES import instead of require
 import "./styles.css";
 export default {
@@ -17,7 +17,7 @@ export default {
       dark: {
         colors: {
           // Brand
-          primary100: "#ef4132",
+          primary100: "#5a5a5aff",
           primary200: "#252525ff",
           primary500: "#e3e3e3ff",
           primary600: "#ffffffff",
@@ -25,14 +25,14 @@ export default {
           
 
           // Surfaces (used across body/cards/sidebar/etc.)
-          neutral0: "#2a2a2a", // app background
-          neutral100: "#202020", // cards/side surfaces
-          neutral150: "#4d4d4dff",
-          neutral200: "#454545ff",
-          neutral500: "#adadad88",
-          neutral600: "#cbd5e1",
+          neutral0: "#171717ff", // app background
+          neutral100: "#111111ff", // cards/side surfaces
+          neutral150: "#282828ff",
+          neutral200: "#414141ff",
+          neutral500: "#80808088",
+          neutral600: "#7e7e7eff",
           neutral700: "#e2e8f0",
-          neutral800: "#f1f5f9",
+          neutral800: "#ffffffff",
           neutral900: "#ffffff", // text on dark surfaces
         },
       },

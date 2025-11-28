@@ -4,7 +4,7 @@ body {
 
 
 button.sc-bRKDuR.ewqsZX {
-  background-color: #ef4132 !important;
+  background-color: #0c0c0c !important;
   border: none !important;
 }
 
@@ -31,8 +31,8 @@ div.sc-bRKDuR.kyrFBs {
 
 
 .ejxjdv[data-state='checked']:not([data-disabled]) {
-    background-color: #ef4132 !important;
-    border-color: #ef4132 !important;
+    background-color: #0c0c0c !important;
+    border-color: #0c0c0c !important;
 }
 
 input {
@@ -41,7 +41,7 @@ input {
 }
 
 .kUMJET:focus-within {
-  border: solid 2px #ef4132 !important;
+  border: solid 2px #0c0c0c !important;
   box-shadow: 0 0 0 0 !important;
   outline: 0 !important;
 }
@@ -71,10 +71,10 @@ input {
 }
 
 .jPbJjG div {
-    background-color: #ef4132 !important;
-    border-color: #ef4132 !important;
+    background-color: #0c0c0c !important;
+    border-color: #0c0c0c !important;
 }
 
 g path {
-    stroke: #ef4132 !important;
+    stroke: #0c0c0c !important;
 }
