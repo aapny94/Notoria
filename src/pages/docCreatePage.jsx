@@ -5,21 +5,20 @@ import { getCategories } from "../api/apiCategory";
 import { createDoc } from "../api/apiDocumentContent"; // You need to implement this API call
 import { useNavigate } from "react-router-dom";
 import { getUserCategories } from "../api/apiCategory"; // <-- import this
-
-import * as jwt_decode from "jwt-decode";
-const decode = jwt_decode.default || jwt_decode;
+import { jwtDecode } from "jwt-decode";
 
 function getCurrentUserId() {
-  const token = localStorage.getItem("app_token"); // or your token key
+  const token = localStorage.getItem("app_token");
   if (!token) return null;
+
   try {
-    const decoded = decode(token);
-    // Strapi usually puts user id in decoded.id or decoded.user.id
+    const decoded = jwtDecode(token);
     return decoded.id || decoded.user?.id || null;
   } catch {
     return null;
   }
 }
+
 
 export default function DocCreatePage() {
   const [title, setTitle] = useState("");

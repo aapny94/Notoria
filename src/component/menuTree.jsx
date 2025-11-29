@@ -71,7 +71,7 @@ function Titles({ items = [], depth = 0, activeId }) {
             sx={{
               ml: isActive ? -2 : -1.6,
               pl: 2,
-              borderLeft: 1,
+              borderLeftWidth: 1,
               borderColor: "divider",
               borderLeft: isActive ? "3px solid #ED8177 !important" : "none",
               fontWeight: isActive ? 700 : 400,
@@ -254,8 +254,6 @@ export default function MenuTree() {
           const titleObj = {
             id: doc.id,
             title: capitalize(doc.title), // <-- Capitalize the doc title only
-
-            title: doc.title,
             tags: Array.isArray(doc.Tags) ? doc.Tags : [], // <-- Use doc.Tags here!
           };
           cat.titles.push(titleObj);
@@ -300,7 +298,6 @@ export default function MenuTree() {
           style={{
             width: "100%",
             padding: "11px 11px 11px 38px", // left padding for icon
-            fontSize: "1rem",
             borderRadius: "10px",
             border: ".5px solid #83838363",
             backgroundColor: "#34343471",
@@ -309,8 +306,7 @@ export default function MenuTree() {
         />
       </Box>
 
-      <List dense disablePadding
-      style={{ padding: 8, marginTop: -10 }}>
+      <List dense disablePadding style={{ padding: 8, marginTop: -10 }}>
         {filteredTree.map((node) => (
           <Node key={node.id} node={node} activeId={id} />
         ))}
