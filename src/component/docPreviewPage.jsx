@@ -166,20 +166,22 @@ function DocPreviewPage() {
           />
         </div>
       </div>
-      <div style={{ padding: "0 2em 0 2em", width: "330px" }}>
+      <div style={{ padding: "0 2em 0 .5em", width: "330px" }}>
         <div
-        className="onThisPageContainer"
+          className="onThisPageContainer"
           style={{
             float: "right",
-            width: "230px",
             padding: "1em",
             borderRadius: "8px",
           }}
         >
           <p className="preview-title">On this page</p>
-          {headings.map((h, i) => (
-            <h4 key={i}>{h.text}</h4>
-          ))}
+
+          <div style={{ overflow: "auto", maxHeight: 270 }}>
+            {headings.map((h, i) => (
+              <h4 style={{ marginLeft: 0, marginBottom: ".30rem", lineHeight: "1.15rem", lineBreak: "2rem", fontWeight: "500" }} key={i}>{h.text}</h4>
+            ))}
+          </div>
         </div>
         <div className="summaryContainer">
           <p className="preview-title">Title</p>

@@ -306,7 +306,7 @@ export default function MenuTree() {
         />
       </Box>
 
-      <List dense disablePadding style={{ padding: 8, marginTop: -10 }}>
+      <List dense disablePadding style={{ padding: 5, paddingTop: 0, paddingBottom: 30, marginTop: 0, overflowY: 'auto', maxHeight: 'calc(100vh - 150px)' }}>
         {filteredTree.map((node) => (
           <Node key={node.id} node={node} activeId={id} />
         ))}

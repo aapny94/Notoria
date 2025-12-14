@@ -141,10 +141,20 @@ body {
   padding: 0px;
   flex-direction: row;
 }
+.css-54zhjy-MuiList-root {
+  padding-right: 1.1rem !important;
+}
+
+.css-1h3u4x2 {
+  padding-right: 1rem !important;
+}
+
+.css-k6ekp0 {
+  padding-right: 0px !important;
+}
 
 .menuContainer {
   padding-left: 2.5rem;
-  padding-right: 1rem;
   width: 20%;
   min-width: 250px;
   height: 100%;
@@ -535,9 +545,8 @@ p a {
 }
 
 .onThisPageContainer {
-  height: 200px;
   overflow-y: auto;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
 }
 
 .onThisPageContainer p {
@@ -631,5 +640,5 @@ p a {
 }
 
 .componentContainer table td {
-  padding: .7rem 1rem !important;
+  padding: 0.7rem 1rem !important;
 }
