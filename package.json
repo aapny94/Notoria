@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@chakra-ui/react": "^3.25.0",
+    "@ckeditor/ckeditor5-build-classic": "^41.4.2",
+    "@ckeditor/ckeditor5-react": "^11.0.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.1",
@@ -23,11 +25,15 @@
     "@tiptap/extension-underline": "^3.3.0",
     "@tiptap/react": "^3.3.0",
     "@tiptap/starter-kit": "^3.3.0",
+    "@toast-ui/react-editor": "^3.2.3",
     "axios": "^1.11.0",
+    "ckeditor5": "^46.1.1",
     "framer-motion": "^12.23.12",
     "highlight.js": "^11.11.1",
+    "jwt-decode": "^4.0.0",
     "lowlight": "^3.3.0",
     "marked": "^16.2.1",
+    "prosemirror-markdown": "^1.13.2",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-markdown": "^10.1.0",
@@ -35,7 +41,8 @@
     "rehype-highlight": "^7.0.2",
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
-    "remark-mark": "^0.0.0"
+    "remark-mark": "^0.0.0",
+    "turndown": "^7.2.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",

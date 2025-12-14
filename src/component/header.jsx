@@ -2,6 +2,7 @@ import { Box, Button } from "@mui/material";
 import logoMain from "../assets/Notoria-logo-04w.png";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { useNavigate } from "react-router-dom";
+import { TopMenu } from "./topMenu";
 
 const TOKEN_KEY = import.meta.env.VITE_TOKEN_KEY || "app_token";
 
@@ -18,6 +19,7 @@ function Header() {
     <Box className="header">
       <Box className="header-content">
         <img src={logoMain} alt="Notoria Logo" />
+        <TopMenu />
         <Button
           style={{
             borderRadius: "1.5rem",

@@ -4,7 +4,6 @@ import { Box, Button, Typography, TextField, Alert } from "@mui/material";
 import logoMain from "../assets/Notoria-logo-04w.png";
 
 const TOKEN_KEY = import.meta.env.VITE_TOKEN_KEY || "app_token";
-const TOKEN_EXPIRY_MINUTES = 30; // Token valid for 30 minutes
 
 function Login() {
   const [username, setUsername] = useState("");
@@ -16,24 +15,43 @@ function Login() {
 
   const TOKEN_EXPIRY_HOURS = 2; // Token valid for 2 hours
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const envUsername = import.meta.env.VITE_USERNAME;
-    const envPassword = import.meta.env.VITE_PASSWORD;
-    console.log("VITE_USERNAME:", envUsername);
-    console.log("VITE_PASSWORD:", envPassword);
-    console.log("Input Username:", username);
-    console.log("Input Password:", password);
+    setError("");
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_STRAPI_URL}/api/auth/local`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            identifier: username,
+            password: password,
+          }),
+        }
+      );
+      const data = await response.json();
+      if (data.jwt) {
+        localStorage.setItem(TOKEN_KEY, data.jwt);
+        localStorage.setItem(TOKEN_KEY + "_user", JSON.stringify(data.user));
+        localStorage.setItem(
+          TOKEN_KEY + "_expiry",
+          Date.now() + TOKEN_EXPIRY_HOURS * 60 * 60 * 1000
+        );
 
-    if (username === envUsername && password === envPassword) {
-      // Generate token and expiry
-      const token = Math.random().toString(36).substr(2);
-      const expiry = Date.now() + TOKEN_EXPIRY_HOURS * 60 * 60 * 1000;
-      localStorage.setItem(TOKEN_KEY, token);
-      localStorage.setItem(TOKEN_KEY + "_expiry", expiry);
-      navigate("/");
-    } else {
-      setError("Invalid credentials");
+        console.log("JWT token:", localStorage.getItem(TOKEN_KEY));
+        console.log("User object:", localStorage.getItem(TOKEN_KEY + "_user"));
+        console.log(
+          "Token expiry:",
+          localStorage.getItem(TOKEN_KEY + "_expiry")
+        );
+
+        navigate("/");
+      } else {
+        setError(data.error?.message || "Invalid credentials");
+      }
+    } catch (err) {
+      setError("Login failed");
     }
   };
 

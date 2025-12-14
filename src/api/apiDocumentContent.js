@@ -1,26 +1,149 @@
-import axios from "axios";
+const STRAPI_URL = import.meta.env.VITE_STRAPI_URL;
+const TOKEN_KEY = import.meta.env.VITE_TOKEN_KEY || "app_token";
 
-const BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || "";
-const api = axios.create({ baseURL: BASE_URL });
-
-// Fetch a document by id or slug
-export const getDocumentByIdOrSlug = async (idOrSlug) => {
-  if (!idOrSlug) {
-    console.warn("getDocumentByIdOrSlug called without idOrSlug — skipping request");
-    return null;
+// src/api/apiDocumentContent.js
+async function fetchJson(url, opts) {
+  const res = await fetch(url, opts);
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    const err = new Error(
+      `HTTP ${res.status} on ${url}: ${text || res.statusText}`
+    );
+    err.status = res.status;
+    throw err;
   }
-  try {
-    const { data } = await api.get(`/api/docs/${idOrSlug}`);
-    return data;
-  } catch (error) {
-    console.error("Error fetching document:", error);
-    throw error;
-  }
-};
+  return res.json();
+}
 
-// Update a document
-export const updateDocument = async (idOrSlug, payload) => {
-  if (!idOrSlug) throw new Error("updateDocument requires idOrSlug");
-  const { data } = await api.put(`/api/docs/${idOrSlug}`, payload);
-  return data;
-};
+function authHeaders() {
+  const TOKEN_KEY = import.meta.env.VITE_TOKEN_KEY || "app_token";
+  const token = localStorage.getItem(TOKEN_KEY);
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function isNumericId(v) {
+  return typeof v === "string" ? /^[0-9]+$/.test(v) : Number.isInteger(v);
+}
+
+// Accepts either numeric id ("5") or v5 documentId ("qnbctys78...").
+// If a numeric id is passed, we fetch by filter and then return the entry (with its documentId).
+export async function getDocByKey(key) {
+  const STRAPI_URL = import.meta.env.VITE_STRAPI_URL;
+  const headers = authHeaders();
+
+  // If looks like a documentId (non-numeric), call findOne by path immediately
+  if (!isNumericId(key)) {
+    const data = await fetchJson(`${STRAPI_URL}/api/docs/${key}?populate=*`, {
+      headers,
+    });
+    return data?.data;
+  }
+
+  // Else numeric: resolve via filters and return the first match
+  const list = await fetchJson(
+    `${STRAPI_URL}/api/docs?filters[id][$eq]=${key}&publicationState=preview&populate=*`,
+    { headers }
+  );
+  if (list?.data?.length) return list.data[0];
+  throw new Error(`Document with id=${key} not found`);
+}
+
+// Update by either numeric id or documentId. If numeric, resolve to documentId first.
+export async function updateDoc(key, payload) {
+  const STRAPI_URL = import.meta.env.VITE_STRAPI_URL;
+  const headers = {
+    "Content-Type": "application/json",
+    ...authHeaders(),
+  };
+
+  // If numeric -> resolve
+  let documentId = key;
+  if (isNumericId(key)) {
+    const found = await fetchJson(
+      `${STRAPI_URL}/api/docs?filters[id][$eq]=${key}&publicationState=preview&fields[0]=documentId`,
+      { headers }
+    );
+    if (!found?.data?.length)
+      throw new Error(`Cannot resolve numeric id ${key} to documentId`);
+    documentId =
+      found.data[0].documentId || found.data[0].attributes?.documentId;
+  }
+
+  // Use documentId for v5 findOne/update route
+  const resp = await fetch(`${STRAPI_URL}/api/docs/${documentId}`, {
+    method: "PUT",
+    headers,
+    body: JSON.stringify({ data: payload }),
+  });
+  if (!resp.ok) {
+    const txt = await resp.text().catch(() => "");
+    throw new Error(
+      `HTTP ${resp.status} on ${resp.url}: ${txt || resp.statusText}`
+    );
+  }
+  const json = await resp.json();
+  return json?.data ?? json;
+}
+
+// Back-compat: old name
+export async function getDocById(id) {
+  return getDocByKey(id);
+}
+
+export async function createDoc(payload) {
+  const token = localStorage.getItem(TOKEN_KEY); // Or your token key
+  const res = await fetch(`${STRAPI_URL}/api/docs`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ data: payload }), // <-- NEST UNDER "data"
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to create document");
+  }
+
+  return await res.json();
+}
+
+export async function deleteDoc(key) {
+  const token = localStorage.getItem(TOKEN_KEY);
+  const headers = {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+  let documentId = key;
+
+  // If key is numeric, resolve to documentId first
+  if (isNumericId(key)) {
+    const found = await fetchJson(
+      `${STRAPI_URL}/api/docs?filters[id][$eq]=${key}&publicationState=preview&fields[0]=documentId`,
+      { headers }
+    );
+    if (!found?.data?.length)
+      throw new Error(`Cannot resolve numeric id ${key} to documentId`);
+    documentId =
+      found.data[0].documentId || found.data[0].attributes?.documentId;
+  }
+
+  // Delete using documentId
+  const res = await fetch(`${STRAPI_URL}/api/docs/${documentId}`, {
+    method: "DELETE",
+    headers,
+  });
+
+  if (!res.ok) {
+    let error;
+    try {
+      error = await res.json();
+    } catch {
+      error = { message: "Failed to delete document" };
+    }
+    throw new Error(error.message || "Failed to delete document");
+  }
+
+  return true;
+}
