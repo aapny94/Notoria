@@ -6,14 +6,10 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
-  Typography,
   Collapse,
-  Tooltip,
-  Chip,
-  Stack,
 } from "@mui/material";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
-import { useNavigate, useParams } from "react-router-dom"; // <-- import useParams
+import { useNavigate, useParams } from "react-router-dom";
 import { getArticles } from "../api/apiArticles.js";
 import SearchIcon from "@mui/icons-material/Search";
 
@@ -24,17 +20,8 @@ function capitalize(str) {
 
 // --- helpers to normalize (flat -> tree) and create preview data ---
 function buildCategoryTree(categories = []) {
-  // categories can be either already nested ({children:[]}) or flat with parent relation
-  const looksNested = categories.some(
-    (c) => Array.isArray(c.children) && c.children.length > 0
-  );
-  if (looksNested) return categories;
-
-  // assume flat shape: { id, name, parent?: { id }, titles?: [...] }
   const byId = new Map();
-  categories.forEach((c) =>
-    byId.set(c.id, { ...c, children: c.children ?? [] })
-  );
+  categories.forEach((c) => byId.set(c.id, { ...c, children: [] }));
 
   const roots = [];
   byId.forEach((c) => {
@@ -50,13 +37,47 @@ function buildCategoryTree(categories = []) {
   return roots;
 }
 
-function Titles({ items = [], depth = 0, activeId }) {
+function normalizeCategory(rawCategory) {
+  const attrs = rawCategory?.attributes || rawCategory || {};
+  const parentRaw = attrs.parent?.data || attrs.parent || null;
+  return {
+    id: rawCategory?.id ?? attrs?.id,
+    name: attrs?.name || "",
+    parent: parentRaw ? { id: parentRaw.id ?? parentRaw?.attributes?.id } : null,
+    titles: [],
+  };
+}
+
+function normalizeDoc(rawDoc) {
+  const attrs = rawDoc?.attributes || rawDoc || {};
+  const categoryRaw = attrs.category?.data || attrs.category || null;
+  const categoryId =
+    categoryRaw?.id ??
+    categoryRaw?.attributes?.id ??
+    attrs?.category_id ??
+    attrs?.categoryId ??
+    null;
+
+  return {
+    id: rawDoc?.id ?? attrs?.id,
+    title: attrs?.title || "",
+    createdAt: attrs?.createdAt || null,
+    tags: Array.isArray(attrs?.Tags)
+      ? attrs.Tags
+      : Array.isArray(attrs?.tags)
+      ? attrs.tags
+      : [],
+    categoryId,
+  };
+}
+
+function Titles({ items = [], activeId }) {
   const navigate = useNavigate();
   if (!items?.length) return null;
   return (
     <Box
       sx={{
-        ml: depth === 0 ? 0 : 1,
+        ml: 1,
         pl: 1.5,
         borderLeft: 1,
         borderColor: "divider",
@@ -80,11 +101,6 @@ function Titles({ items = [], depth = 0, activeId }) {
             <ListItemButton
               dense
               onClick={() => navigate(`/${t.id}`)}
-              sx={
-                {
-                  // Remove border/fontWeight/color from here
-                }
-              }
             >
               <ListItemText
                 primary={capitalize(t.title)}
@@ -137,14 +153,14 @@ function Node({ node, depth = 0, activeId }) {
               <Node
                 key={child.id}
                 node={child}
-                depth={depth + 0.05}
+                depth={depth + 1}
                 activeId={activeId}
               />
             ))}
           </Box>
         )}
         {/* titles (documents) */}
-        <Titles items={node.titles} depth={depth + 0.05} activeId={activeId} />
+        <Titles items={node.titles} activeId={activeId} />
       </Collapse>
     </Box>
   );
@@ -193,80 +209,60 @@ function filterTree(tree, search) {
 export default function MenuTree() {
   const [tree, setTree] = useState([]);
   const [search, setSearch] = useState("");
-  const { idOrSlug } = useParams(); // <-- get active id from URL
-  const filteredTree = filterTree(tree, search);
   const { id } = useParams();
+  const filteredTree = filterTree(tree, search);
+
   useEffect(() => {
-    listMenu()
-      .then((payload) => {
-        const raw = Array.isArray(payload) ? payload : payload?.data ?? [];
+    let cancelled = false;
+    Promise.all([listMenu(), getArticles()])
+      .then(([categoriesPayload, docsPayload]) => {
+        const categoriesRaw = Array.isArray(categoriesPayload)
+          ? categoriesPayload
+          : categoriesPayload?.data ?? [];
+        const docsRaw = Array.isArray(docsPayload)
+          ? docsPayload
+          : docsPayload?.data ?? [];
 
-        const flat = raw.map((cat) => {
-          const attrs = cat.attributes || cat;
-          const parentData = attrs.parent?.data || attrs.parent || null;
-          const childrenData = attrs.children?.data || attrs.children || [];
-          const titlesData = attrs.titles?.data || attrs.titles || [];
-          return {
-            id: cat.id ?? attrs.id,
-            title: capitalize(doc.title), // <-- Capitalize the doc title only
+        const categories = categoriesRaw
+          .map(normalizeCategory)
+          .filter((c) => c.id != null);
 
-            name: attrs.name,
-            parent: parentData ? { id: parentData.id } : null,
-            children: Array.isArray(childrenData)
-              ? childrenData.map((c) => ({
-                  id: c.id ?? c?.attributes?.id,
-                  name: c.attributes?.name || c.name,
-                }))
-              : [],
-            titles: Array.isArray(titlesData)
-              ? titlesData.map((t) => ({
-                  id: t.id ?? t?.attributes?.id,
-                  title: t.attributes?.title || t.title,
-                }))
-              : [],
-            description: attrs.description || "",
-            tags: attrs.tags || [], // <-- add this line
-          };
+        const categoryById = new Map(
+          categories.map((cat) => [String(cat.id), cat])
+        );
+
+        docsRaw.map(normalizeDoc).forEach((doc) => {
+          if (!doc.categoryId || !doc.id) return;
+          const category = categoryById.get(String(doc.categoryId));
+          if (!category) return;
+          category.titles.push({
+            id: doc.id,
+            title: capitalize(doc.title),
+            createdAt: doc.createdAt,
+            tags: doc.tags,
+          });
         });
 
-        // 👇 put debug log right here
+        categories.forEach((cat) => {
+          cat.titles.sort((a, b) => {
+            const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return aTime - bTime; // older (previous) docs on top
+          });
+        });
 
-        const treeData = buildCategoryTree(flat);
-        setTree(treeData);
-      })
-      .catch((error) => {});
-  }, []);
-
-  useEffect(() => {
-    Promise.all([listMenu(), getArticles()]).then(([categories, docs]) => {
-      // Map categories
-      const flat = categories.map((cat) => ({
-        ...cat,
-        titles: [],
-      }));
-
-      // Attach articles to categories
-      docs.forEach((doc) => {
-        const catId = doc.category?.id;
-        if (!catId) return;
-        const cat = flat.find((c) => c.id === catId);
-        if (cat) {
-          const titleObj = {
-            id: doc.id,
-            title: capitalize(doc.title), // <-- Capitalize the doc title only
-            tags: Array.isArray(doc.Tags) ? doc.Tags : [], // <-- Use doc.Tags here!
-          };
-          cat.titles.push(titleObj);
-
-          // Debug log
+        if (!cancelled) {
+          setTree(buildCategoryTree(categories));
         }
+      })
+      .catch(() => {
+        if (!cancelled) setTree([]);
       });
-
-      // Build tree and set state
-      const treeData = buildCategoryTree(flat);
-      setTree(treeData);
-    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
   return (
     <Box sx={{ textAlign: "left", pr: 1 }}>
       <Box
@@ -306,7 +302,18 @@ export default function MenuTree() {
         />
       </Box>
 
-      <List dense disablePadding style={{ padding: 5, paddingTop: 0, paddingBottom: 30, marginTop: 0, overflowY: 'auto', maxHeight: 'calc(100vh - 150px)' }}>
+      <List
+        dense
+        disablePadding
+        style={{
+          padding: 5,
+          paddingTop: 0,
+          paddingBottom: 30,
+          marginTop: 0,
+          overflowY: "auto",
+          maxHeight: "calc(100vh - 150px)",
+        }}
+      >
         {filteredTree.map((node) => (
           <Node key={node.id} node={node} activeId={id} />
         ))}

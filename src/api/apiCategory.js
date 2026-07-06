@@ -25,14 +25,15 @@ function isNumericId(v) {
   return typeof v === "string" ? /^[0-9]+$/.test(v) : Number.isInteger(v);
 }
 
-export const getUserCategories = async () => {
+export const getUserCategories = async (options = {}) => {
+  const { strict = false } = options;
   const headers = authHeaders();
   const userStr = localStorage.getItem(TOKEN_KEY + "_user");
   const currentUserId = userStr ? JSON.parse(userStr).id : null;
 
   if (!currentUserId) {
-    console.warn("No current user ID found, returning all categories.");
-    return getCategories();
+    console.warn("No current user ID found.");
+    return strict ? [] : getCategories();
   }
 
   try {
@@ -41,11 +42,8 @@ export const getUserCategories = async () => {
     const data = await fetchJson(url, { headers });
     return Array.isArray(data) ? data : data.data || [];
   } catch (e) {
-    console.error(
-      "getUserCategories failed, falling back to getCategories:",
-      e
-    );
-    return getCategories();
+    console.error("getUserCategories failed:", e);
+    return strict ? [] : getCategories();
   }
 };
 
